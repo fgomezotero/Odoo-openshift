@@ -1,3 +1,26 @@
+The image was built with the aim of raising a productive Odoo environment in the Openshift Container Platform.
+
+To achieve this we cloned the official odoo repository for docker environments:
+```
+https://github.com/odoo/docker
+```
+
+Then we modified the Dockerfile file of version 12 with the aim of complying with the good practices and recommendations necessary so that these images could run in Openshift.
+
+As the images in Openshift run with an arbitrary user that belongs to the root group, it was necessary to create an additional script to create that user in the file / etc / passwd.
+**uid_entrypoint**
+```
+#!/bin/sh
+if ! whoami &> /dev/null; then
+  if [ -w /etc/passwd ]; then
+    echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${HOME}:/sbin/nologin" >> /etc/passwd
+  fi
+fi
+exec "$@"
+```
+
+Therefore, the Dockerfile file remains as follows:
+```
 FROM debian:stretch
 LABEL maintainer="Odoo S.A. <info@odoo.com>"
 
@@ -96,3 +119,17 @@ USER 100001
 ENTRYPOINT ["/uid_entrypoint"]
 
 CMD ["/entrypoint.sh","odoo"]
+```
+
+For the environment of productive odoo with its postgres databases to function correctly we must:
+
+Firstly, carry out a deployment of a Postgres database version >= 9.4 with persistent volumes and the parameter **POSTGRES_DB=postgres**
+Then connect them to the pods where the database is running and give permission to the user defined by environment variable or by default   **odoo**  so you can create databases as the following example demonstrates or through the Openshift visual interface.
+```
+# oc rsh db-1-s8zw1
+# psql
+$ ALTER ROLE [odoo] WITH CREATEDB;
+$ \q
+# exit
+```
+**Note:** The user must be the one configured in the environment variable when instantiating the odoo image for Openshift
