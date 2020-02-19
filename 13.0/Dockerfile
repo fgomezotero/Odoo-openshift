@@ -65,12 +65,15 @@ RUN set -x; \
 
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
+COPY ./uid_entrypoint /
 COPY ./odoo.conf /etc/odoo/
 
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
-RUN chown odoo /etc/odoo/odoo.conf \
+RUN chown odoo:0 /etc/odoo/odoo.conf \
     && mkdir -p /mnt/extra-addons \
-    && chown -R odoo /mnt/extra-addons
+    && chown -R odoo:0 /mnt/extra-addons /var/lib/odoo \
+    && chmod -R g=u /mnt/extra-addons /var/lib/odoo \
+    && chmod g=u /etc/passwd
 VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
 # Expose Odoo services
@@ -82,7 +85,7 @@ ENV ODOO_RC /etc/odoo/odoo.conf
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
 # Set default user when running the container
-USER odoo
+USER 100001
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
+ENTRYPOINT ["/uid_entrypoint"]
+CMD ["/entrypoint.sh","odoo"]
