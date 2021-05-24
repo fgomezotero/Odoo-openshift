@@ -1,0 +1,33 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: odoo
+  name: odoo
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'odoo:v.12.0'
+  postCommit: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 200Mi
+  runPolicy: Serial
+  source:
+    git:
+      uri: 'https://github.com/fgomezotero/Odoo-openshift.git'
+      ref: 'odoo12-openshift-onpremise'
+    type: Git
+  strategy:
+    dockerStrategy:
+      dockerfilePath: ./12.0/Dockerfile
+    type: Docker
+  successfulBuildsHistoryLimit: 5
+status:
